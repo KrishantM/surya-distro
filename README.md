@@ -89,6 +89,26 @@ A scoring engine labels each post: whether it's about the space, what kind of po
 
 Every study and every rule says which engine labelled it. A post an engine doesn't answer for gets the heuristic's label, marked as a fallback. The Jev key is read from the environment and sent only in its Authorization header. It is never logged or stored.
 
+### Adding Jev
+
+Distro works fully without Jev. The local model is the default, and the rules-only engine needs nothing at all. If you have a key for [Jev](https://typesafe.ai), TypeSafe's decision model, it can improve a study in three ways:
+
+- **Bigger studies.** Labelling is the slow step. A local model took about 8 minutes for 387 posts. TypeSafe reports replies in under half a second, so a study can read thousands of posts. More posts means more rules reach medium or high confidence.
+- **Calibrated relevance.** Jev returns a probability with each label, trained to match how often it's right. Distro uses the relevance probability to decide which posts belong to your space, so off-topic posts stay out of the baseline.
+- **No broken answers.** Jev can only answer in the shape it was asked for. Fewer posts fall back to the heuristic because a model's reply couldn't be read.
+
+To use it, set the key and pick the engine:
+
+```bash
+export TYPESAFE_API_KEY=your-key
+```
+
+```bash
+surya-distro --engine jev study owner/repo
+```
+
+`SURYA_DISTRO_ENGINE=jev` makes it the default. Distro never picks Jev on its own, so a key in your environment never costs you by surprise. Jev is in early access and billed per token, with no free tier. The benefits above are TypeSafe's published claims. Distro's Jev engine follows TypeSafe's API reference but hasn't been run against the live API.
+
 ## The playbook
 
 The strategy compares the formats that beat their baseline with your product's facts and its likely audience. It writes rules per channel: format, opening, length, media, link placement and timing, plus what to avoid. Formats are compared among launch posts when there are enough of them.
