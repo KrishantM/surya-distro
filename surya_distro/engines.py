@@ -357,5 +357,5 @@ def choose(name: Optional[str], net: Net, terms: Optional[List[str]] = None) -> 
         return Jev(net, key, os.environ.get("SURYA_DISTRO_JEV_MODEL", "jev-latest"), terms)
     exe = find_unite()
     if not exe:
-        raise EngineError("surya-unite isn't installed. Get it from github.com/KrishantM/surya-unite, or set SURYA_UNITE to its path.")
+        raise EngineError("surya-unite isn't installed. It comes with Surya Unite. If it is installed somewhere else, set SURYA_UNITE to its path.")
     return Unite(exe, terms=terms)

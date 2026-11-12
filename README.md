@@ -138,7 +138,7 @@ Distro does the work, but the advanced steps compound only when what it learns o
 
 - **A memory store.** Point Distro at one and the findings go there, in a `surya-distro/` folder with one index note. [Surya Memory](https://github.com/KrishantM/surya-memory) is found on its own, as is Claude Code's memory directory. Pass `--memory DIR` or set `SURYA_DISTRO_MEMORY` for any other. With no store it keeps them in `~/.surya-distro/learnings/`. If the store has a `MEMORY.md` index, Distro adds one line pointing at its index note, once, so your agents see what worked.
 - **Approvals.** Distro's own approvals happen in your terminal. [Surya Gates](https://github.com/KrishantM/surya-gates) adds approval gates to the agent around it, so nothing that publishes slips through.
-- **Models.** [Surya Unite](https://github.com/KrishantM/surya-unite) routes the labelling to a local model, Claude or Codex.
+- **Models.** Surya Unite, part of the paid Surya app, routes the labelling to a local model, Claude or Codex.
 - **Agents.** The Claude Code plugin is the main way in. Codex or any agent with a shell can run the same commands.
 
 A visual dashboard is part of Surya Unite.
