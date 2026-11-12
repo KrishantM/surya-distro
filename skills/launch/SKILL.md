@@ -1,0 +1,44 @@
+---
+name: launch
+description: Launch an open-source GitHub repo with Surya Distro. Use when the user wants to launch, announce or promote a repo, or study what posts work in its space. Also for writing a Show HN, Reddit, X, Bluesky, LinkedIn or Product Hunt post, finding where to submit a tool, or measuring and learning from posts they made.
+---
+
+# Launch a repo
+
+Surya Distro studies, drafts, checks, measures and learns. It never posts, and neither do you.
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/surya-distro" draft <owner/repo>
+```
+
+That runs the study and the strategy first if they're missing or stale, then drafts. Everything lands under `~/.surya-distro/<owner>/<repo>/`. A study can take a few minutes, so run it in the background and tell the person it's running.
+
+1. **Show the study.** Read `study/study.md`. Tell the person, in a few lines, which formats beat their baseline, and which small or young accounts won and how. Say which engine labelled the posts.
+2. **Show the playbook change.** If `draft` says a change is waiting, summarise `playbook.proposed.md`: each rule, its evidence and its confidence. Ask them to approve it in their own terminal with `surya-distro approve <owner/repo> playbook`. Until they do, drafts follow the approved playbook only. To show drafts from the change meanwhile, run `draft <owner/repo> --preview --force`. Those drafts can't be approved until the playbook is.
+3. **Read `kit/brief.md` and the drafts.** The brief holds the facts, the playbook's rules per channel and each channel's limits.
+4. **Rewrite each draft to follow the playbook.** Use only facts in the brief. Keep it plain. Say what the tool does and what it doesn't. No hype words, superlatives or em dashes.
+5. **Ask the person for what only they know.** Every `[[fill: ...]]` marks one. That covers why they built it, the problem in their words, who it's for, a real result, the feedback they want and their name. Ask for all of them in one message. Use their words, and don't invent a motive, a number or a result.
+6. **Run the checks** and fix every error:
+
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/surya-distro" check <owner/repo>
+   ```
+
+7. **Show them the review sheet.** Run `show <owner/repo>` and give them the path to `kit/review.md`.
+
+## After they post
+
+- They record each post: `posted <owner/repo> <draft> --url LINK`.
+- `measure` reads posts at about 1 hour, 24 hours and 7 days. For X and LinkedIn, ask them for the numbers and pass them with `--likes`, `--replies`, `--reposts`, `--views` and `--followers`.
+- `report <owner/repo>` shows each post beside the GitHub traffic that followed.
+- `learn <owner/repo>` writes one note per finding and proposes a playbook change. Show them the diff. They approve it in their own terminal.
+- `schedule` prints an hourly job for `measure`. Installing it is their choice, so give them the text.
+
+## What you never do
+
+- Post, submit, comment, open an issue or pull request on a list, or send an email. The person does each of those by hand.
+- Run `approve` or `posted` for them. Approval needs their own terminal, and it refuses an agent's shell.
+- Pay for a listing or a scoring engine. Jev is paid and opt-in. Use it only if they set it up.
+- Log in to a site, or read anything behind a login.
+- Edit an approved draft without telling them. An edit makes it a draft again, and it needs a new approval.
+- Copy someone else's post. The study is for formats, never words.

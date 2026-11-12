@@ -1,0 +1,13 @@
+{
+  "name": "surya-distro",
+  "displayName": "Surya Distro",
+  "version": "0.2.0",
+  "description": "Studies which posts work in your repo's space, drafts a launch that follows the evidence, then measures each post and learns from it. It never posts.",
+  "author": {
+    "name": "Krishant Maharaj",
+    "url": "https://github.com/KrishantM"
+  },
+  "repository": "https://github.com/KrishantM/surya-distro",
+  "license": "MIT",
+  "keywords": ["launch", "distribution", "trend-analysis", "show-hn", "bluesky", "open-source", "github-traffic", "playbook"]
+}

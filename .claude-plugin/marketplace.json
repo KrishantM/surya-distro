@@ -1,0 +1,15 @@
+{
+  "name": "surya-distro",
+  "description": "Surya Distro, an open-source launch tool for Claude Code.",
+  "owner": {
+    "name": "Krishant Maharaj",
+    "url": "https://github.com/KrishantM"
+  },
+  "plugins": [
+    {
+      "name": "surya-distro",
+      "source": "./",
+      "description": "Studies which posts work in your repo's space, drafts a launch that follows the evidence, then measures each post and learns from it. It never posts."
+    }
+  ]
+}
