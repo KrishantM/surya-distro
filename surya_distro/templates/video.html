@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width={{width}}">
+<title>{{name}}</title>
+<style>
+{{{base_css}}}
+body { position: relative; }
+.hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--u) * 4.5) calc(var(--u) * 6); display: flex; align-items: center; gap: calc(var(--u) * 1.5); z-index: 5; }
+.hud .mark { width: calc(var(--u) * 4.6); height: calc(var(--u) * 4.6); font-size: calc(var(--u) * 2.8); }
+.hud .brand { font-weight: 700; font-size: calc(var(--u) * 2.7); }
+.progress { position: absolute; left: 0; bottom: 0; height: calc(var(--u) * .8); width: 100%; background: var(--accent); transform-origin: left; animation: grow {{seconds}}s linear 0s both; z-index: 5; }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.scene { position: absolute; inset: 0; opacity: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  padding: calc(var(--u) * 12) calc(var(--u) * 8) calc(var(--u) * 9);
+  animation: in .4s ease var(--s) forwards, out .4s ease calc(var(--s) + var(--d) - .4s) forwards; }
+.scene.last { animation: in .4s ease var(--s) forwards; }
+@keyframes in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes out { from { opacity: 1; } to { opacity: 0; } }
+.stage { width: 100%; animation: drift var(--d) linear var(--s) both; }
+@keyframes drift { from { transform: translateY(0) scale(1); } to { transform: translateY(-1.2%) scale(1.025); } }
+.label { font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-size: calc(var(--u) * 2.4); margin-bottom: calc(var(--u) * 3); }
+.cap { font-family: var(--display); font-weight: 750; letter-spacing: -.025em; line-height: 1.12; }
+.w { display: inline-block; opacity: 0; margin-right: .26em; animation: word .5s cubic-bezier(.2, .8, .2, 1) var(--t) forwards; }
+.w.a { color: var(--accent); }
+@keyframes word { from { opacity: 0; transform: translateY(.45em); } to { opacity: 1; transform: none; } }
+.sub { margin-top: calc(var(--u) * 3); color: var(--muted); line-height: 1.3; opacity: 0; animation: fade .6s ease var(--t) forwards; }
+@keyframes fade { from { opacity: 0; transform: translateY(.4em); } to { opacity: 1; transform: none; } }
+.win { background: var(--panel); border: calc(var(--u) * .25) solid var(--line); border-radius: calc(var(--u) * 1.6); overflow: hidden; width: 100%; }
+.win .bar { height: calc(var(--u) * 4.4); display: flex; align-items: center; gap: calc(var(--u) * 1); padding-left: calc(var(--u) * 2); border-bottom: calc(var(--u) * .25) solid var(--line); }
+.win .bar i { width: calc(var(--u) * 1.2); height: calc(var(--u) * 1.2); border-radius: 50%; background: var(--line); display: block; }
+.win .bar span { margin-left: calc(var(--u) * 1.4); font-family: var(--mono); color: var(--muted); font-size: calc(var(--u) * 2); }
+.term { padding: calc(var(--u) * 3.5) calc(var(--u) * 3.5) calc(var(--u) * 4); font-family: var(--mono); }
+.term .line { display: flex; align-items: center; margin-bottom: calc(var(--u) * 1.8); white-space: nowrap; visibility: hidden; animation: show .001s linear var(--t) forwards; }
+@keyframes show { to { visibility: visible; } }
+.term .p { color: var(--accent); margin-right: .9ch; }
+.term .typed { box-sizing: content-box; display: inline-block; overflow: hidden; white-space: nowrap; border-right: .55ch solid var(--accent); width: 0;
+  animation: type var(--dur) steps(var(--n), end) var(--t) forwards, blink 1s steps(1, end) var(--end) infinite; }
+.term .typed.done { animation: type var(--dur) steps(var(--n), end) var(--t) forwards, off .001s linear var(--end) forwards; }
+@keyframes type { from { width: 0; } to { width: calc(var(--n) * 1ch); } }
+@keyframes blink { 0%, 49% { border-right-color: var(--accent); } 50%, 100% { border-right-color: transparent; } }
+@keyframes off { to { border-right-color: transparent; } }
+.shotwin img { display: block; width: 100%; animation: pan var(--d) ease-in-out var(--s) both; transform-origin: 30% 20%; }
+.shotwin .clip { overflow: hidden; }
+@keyframes pan { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.18) translate(-3%, -2%); } }
+.close .url { font-family: var(--mono); color: var(--accent); margin-top: calc(var(--u) * 4); }
+.close .chips { display: flex; gap: calc(var(--u) * 1.5); margin-top: calc(var(--u) * 4); flex-wrap: wrap; }
+.close .chip { border: calc(var(--u) * .22) solid var(--line); border-radius: 99px; padding: calc(var(--u) * .8) calc(var(--u) * 2); color: var(--muted); font-size: calc(var(--u) * 2.4); background: var(--panel); }
+</style></head>
+<body class="{{variant}}" data-seconds="{{seconds}}">
+<div class="hud"><span class="mark">{{initial}}</span><span class="brand">{{name}}</span></div>
+{{{scenes}}}
+<div class="progress"></div>
+<script>{{{fit_js}}}</script>
+</body></html>

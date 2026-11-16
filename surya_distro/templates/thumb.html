@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width={{width}}">
+<title>{{name}}</title>
+<style>
+{{{base_css}}}
+main { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * 5); padding: calc(var(--u) * 8); }
+.mark { width: calc(var(--u) * 46); height: calc(var(--u) * 46); font-size: calc(var(--u) * 30); border-radius: calc(var(--u) * 9); }
+.name { font-family: var(--display); font-weight: 750; font-size: calc(var(--u) * 11); letter-spacing: -.02em; text-align: center; line-height: 1.1; max-width: 100%; max-height: calc(var(--u) * 26); overflow: hidden; }
+</style></head>
+<body class="thumb">
+<main><span class="mark">{{initial}}</span><div class="name" data-fit>{{name}}</div></main>
+<script>{{{fit_js}}}</script>
+</body></html>

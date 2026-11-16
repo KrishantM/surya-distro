@@ -2,7 +2,8 @@
 *.log
 __pycache__/
 *.pyc
-data/
+/data/
 dist/
 build/
 *.egg-info/
+demo/

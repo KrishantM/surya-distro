@@ -1,0 +1,117 @@
+{
+  "verified": "2026-11-11",
+  "about": "Places to submit an open-source developer tool. Each entry's route was read from its own page on the date above. `surya-distro targets` re-checks every entry live each time it runs.",
+  "targets": [
+    {
+      "id": "claude-directory",
+      "name": "Claude plugin directory",
+      "kind": "directory",
+      "fits": ["claude-plugin"],
+      "submit": "https://claude.com/docs/directory/publish",
+      "check_url": "https://claude.com/docs/directory/publish",
+      "how": "Submit from the Claude developer portal. It needs a paid Claude plan, and Anthropic reviews each submission before listing it."
+    },
+    {
+      "id": "mcp-registry",
+      "name": "Official MCP Registry",
+      "kind": "registry",
+      "fits": ["mcp-server"],
+      "submit": "https://github.com/modelcontextprotocol/registry/blob/main/docs/modelcontextprotocol-io/quickstart.mdx",
+      "registry": "mcp",
+      "how": "Publish a server.json with the mcp-publisher CLI. The registry holds metadata only, so the server needs a package on npm, PyPI, NuGet, OCI or MCPB, or a public remote endpoint."
+    },
+    {
+      "id": "awesome-claude-code",
+      "name": "Awesome Claude Code",
+      "kind": "awesome-list",
+      "fits": ["claude-code"],
+      "github": "hesreallyhim/awesome-claude-code",
+      "submit": "https://github.com/hesreallyhim/awesome-claude-code/issues/new?template=recommend-resource.yml",
+      "rules": {"min_age_days": 14, "or_min_stars": 100},
+      "how": "Use the issue form in the web UI only. Pull requests and the gh CLI aren't accepted. One resource at a time."
+    },
+    {
+      "id": "awesome-claude-plugins",
+      "name": "Awesome Claude Plugins",
+      "kind": "awesome-list",
+      "fits": ["claude-plugin"],
+      "github": "composio-community/awesome-claude-plugins",
+      "submit": "https://github.com/composio-community/awesome-claude-plugins#contributing",
+      "how": "Pull request. Their guide asks for a plugin folder in the standard layout and a README entry."
+    },
+    {
+      "id": "awesome-claude-code-jqs",
+      "name": "Awesome Claude Code (jqueryscript)",
+      "kind": "awesome-list",
+      "fits": ["claude-code"],
+      "github": "jqueryscript/awesome-claude-code",
+      "submit": "https://github.com/jqueryscript/awesome-claude-code",
+      "how": "The contribution guide says it's under construction. Entries are added in dated batches, so check the README before suggesting one."
+    },
+    {
+      "id": "awesome-mcp-servers",
+      "name": "Awesome MCP Servers",
+      "kind": "awesome-list",
+      "fits": ["mcp-server"],
+      "github": "punkpeye/awesome-mcp-servers",
+      "submit": "https://github.com/punkpeye/awesome-mcp-servers/blob/main/CONTRIBUTING.md",
+      "how": "Pull request adding one line to README.md in the right category. The server needs a public GitHub repo."
+    },
+    {
+      "id": "mcpservers-org",
+      "name": "mcpservers.org",
+      "kind": "directory",
+      "fits": ["mcp-server"],
+      "submit": "https://mcpservers.org/submit",
+      "check_url": "https://mcpservers.org/submit",
+      "how": "Free web form. It also feeds the wong2/awesome-mcp-servers list, which takes no pull requests. A paid upgrade is offered and isn't needed."
+    },
+    {
+      "id": "mcp-so",
+      "name": "MCP.so",
+      "kind": "directory",
+      "fits": ["mcp-server"],
+      "submit": "https://mcp.so/submit",
+      "check_url": "https://mcp.so/submit",
+      "how": "Web form with the repo URL. A one-time paid option publishes without review. Spending money is the owner's call."
+    },
+    {
+      "id": "glama",
+      "name": "Glama MCP servers",
+      "kind": "directory",
+      "fits": ["mcp-server"],
+      "submit": "https://glama.ai/mcp/servers",
+      "check_url": "https://glama.ai/mcp/servers",
+      "how": "Use Add Server on the site. It needs a Glama sign-in."
+    },
+    {
+      "id": "changelog-news",
+      "name": "Changelog News",
+      "kind": "newsletter",
+      "fits": ["open-source"],
+      "submit": "https://changelog.com/news/submit",
+      "check_url": "https://changelog.com/news/submit",
+      "how": "Sign in, then submit. Your own work is welcome. Commercial products and tutorials aren't."
+    },
+    {
+      "id": "pycoders",
+      "name": "PyCoder's Weekly",
+      "kind": "newsletter",
+      "fits": ["python"],
+      "submit": "https://pycoders.com/submissions",
+      "check_url": "https://pycoders.com/submissions",
+      "how": "Link form. They consider every link and feature some."
+    },
+    {
+      "id": "console-dev",
+      "name": "Console",
+      "kind": "newsletter",
+      "fits": ["developer-tool"],
+      "submit": "https://console.dev/selection-criteria",
+      "check_url": "https://console.dev/selection-criteria",
+      "email": "hello@console.dev",
+      "expect": "hello@console.dev",
+      "how": "Email the details. They review 2 to 3 tools a week against their selection criteria."
+    }
+  ]
+}

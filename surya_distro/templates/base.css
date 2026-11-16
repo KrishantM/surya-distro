@@ -1,0 +1,12 @@
+:root { --bg: {{{bg}}}; --panel: {{{panel}}}; --fg: {{{fg}}}; --muted: {{{muted}}}; --accent: {{{accent}}}; --accent-fg: {{{accent_fg}}};
+  --line: {{{line}}}; --display: {{{font_display}}}; --sans: {{{font_sans}}}; --mono: {{{font_mono}}}; --u: {{{u}}}px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: {{{width}}}px; height: {{{height}}}px; overflow: hidden; background: var(--bg); color: var(--fg);
+  font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }
+.mark { display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-fg);
+  font-family: var(--display); font-weight: 800; border-radius: calc(var(--u) * 1.1); }
+.mono { font-family: var(--mono); }
+.code { background: var(--panel); border: calc(var(--u) * .18) solid var(--line); border-radius: calc(var(--u) * 1.2);
+  font-family: var(--mono); color: var(--fg); line-height: 1.5; }
+.code .p { color: var(--accent); }
+.code div { white-space: pre-wrap; word-break: break-all; }

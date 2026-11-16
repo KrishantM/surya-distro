@@ -1,0 +1,9 @@
+{
+  "note": "Video length limits per channel, in seconds. Neither X's nor LinkedIn's official help page could be fetched by a plain GET on 17 November 2026 (X answers 403 to scripts, and LinkedIn's help page for video is not at a URL a script can find). So these are the published limits as the project's owner stated them, and should be re-checked. They are the lowest limit that applies to a normal account.",
+  "checked": "2026-11-17",
+  "channels": {
+    "x": {"max_seconds": 140, "source": "X's limit for a standard account is 2 minutes 20 seconds. The help page returned 403, so this is not verified from the page. Paid accounts can post longer."},
+    "linkedin": {"max_seconds": 600, "source": "LinkedIn allows up to 10 minutes. Not verified from the help page, which could not be fetched."},
+    "bluesky": {"max_seconds": 180, "source": "Bluesky launched video with a 3 minute limit. The open-source client (bluesky-social/social-app, src/lib/constants.ts, VIDEO_MAX_DURATION_MS) now reads 10 minutes, so 3 minutes is the safe floor. No help page for it could be fetched."}
+  }
+}

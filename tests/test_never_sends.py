@@ -74,10 +74,14 @@ class NeverSends(unittest.TestCase):
         self.assertIn('"--method", "GET"', src)
         self.assertEqual(src.count("self.runner("), 1)
 
-    def test_subprocesses_are_gh_and_unite_only(self):
+    def test_subprocesses_are_gh_unite_and_local_rendering_only(self):
         for name, src in self.sources().items():
-            if "subprocess.run(" in src:
-                self.assertIn(name, ("github.py", "engines.py"), name)
+            if "subprocess.run(" in src or "subprocess.Popen(" in src:
+                self.assertIn(name, ("github.py", "engines.py", "render.py"), name)
+        # render.py runs a local browser, ffmpeg, ffprobe and a text-to-speech command. It makes no network call of its own.
+        render = self.sources()["render.py"]
+        for word in ("import urllib", "import http", "import socket", "import requests", "import ssl"):
+            self.assertNotIn(word, render)
         eng = self.sources()["engines.py"]
         self.assertIn('[self.exe, "ask", "chore", "--quiet"]', eng)
         self.assertNotIn("--write", eng)

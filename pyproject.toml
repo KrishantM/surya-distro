@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "surya-distro"
-version = "0.2.0"
+version = "0.3.0"
 description = "Studies which posts work in your repo's space, drafts a launch that follows the evidence, then measures each post and learns from it. It never posts."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -21,4 +21,4 @@ Repository = "https://github.com/KrishantM/surya-distro"
 packages = ["surya_distro"]
 
 [tool.setuptools.package-data]
-surya_distro = ["data/*.json"]
+surya_distro = ["data/*.json", "templates/*"]

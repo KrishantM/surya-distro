@@ -17,14 +17,16 @@ That runs the study and the strategy first if they're missing or stale, then dra
 2. **Show the playbook change.** If `draft` says a change is waiting, summarise `playbook.proposed.md`: each rule, its evidence and its confidence. Ask them to approve it in their own terminal with `surya-distro approve <owner/repo> playbook`. Until they do, drafts follow the approved playbook only. To show drafts from the change meanwhile, run `draft <owner/repo> --preview --force`. Those drafts can't be approved until the playbook is.
 3. **Read `kit/brief.md` and the drafts.** The brief holds the facts, the playbook's rules per channel and each channel's limits.
 4. **Rewrite each draft to follow the playbook.** Use only facts in the brief. Keep it plain. Say what the tool does and what it doesn't. No hype words, superlatives or em dashes.
-5. **Ask the person for what only they know.** Every `[[fill: ...]]` marks one. That covers why they built it, the problem in their words, who it's for, a real result, the feedback they want and their name. Ask for all of them in one message. Use their words, and don't invent a motive, a number or a result.
-6. **Run the checks** and fix every error:
+5. **Offer to make the images and videos.** Run `create <owner/repo>` and show the person the files in `kit/media/`, with what each one follows (the rule or study finding, or default). Open the PNGs for them and say which videos exist. Run it only if they say yes. Needs Chrome and ffmpeg. If either is missing, say what to install.
+6. **Ask the person for what only they know.** Every `[[fill: ...]]` marks one. That covers why they built it, the problem in their words, who it's for, a real result, the feedback they want and their name. Ask for all of them in one message. Use their words, and don't invent a motive, a number or a result.
+   A video's problem line is one of those. Pass it with `create <owner/repo> --set problem="..."`, in their words.
+7. **Run the checks** and fix every error:
 
    ```bash
    python3 "${CLAUDE_PLUGIN_ROOT}/scripts/surya-distro" check <owner/repo>
    ```
 
-7. **Show them the review sheet.** Run `show <owner/repo>` and give them the path to `kit/review.md`.
+8. **Show them the review sheet.** Run `show <owner/repo>` and give them the path to `kit/review.md`.
 
 ## After they post
 
@@ -37,7 +39,7 @@ That runs the study and the strategy first if they're missing or stale, then dra
 ## What you never do
 
 - Post, submit, comment, open an issue or pull request on a list, or send an email. The person does each of those by hand.
-- Run `approve` or `posted` for them. Approval needs their own terminal, and it refuses an agent's shell.
+- Run `approve` or `posted` for them. That includes `approve <repo> media:<id>`. Approval needs their own terminal, and it refuses an agent's shell.
 - Pay for a listing or a scoring engine. Jev is paid and opt-in. Use it only if they set it up.
 - Log in to a site, or read anything behind a login.
 - Edit an approved draft without telling them. An edit makes it a draft again, and it needs a new approval.

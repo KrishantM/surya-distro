@@ -13,6 +13,7 @@ FENCE = re.compile(r"^\s*(```|~~~)")
 HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 LIST_ITEM = re.compile(r"^\s{0,3}(?:[-*+]|\d+[.)])\s+(.*)$")
 IMAGE = re.compile(r"!\[[^\]]*\]\(\s*([^)\s]+)[^)]*\)|<img\b[^>]*\bsrc=[\"']([^\"']+)", re.I)
+IMAGE_ALT = re.compile(r"!\[([^\]]*)\]\(\s*([^)\s]+)[^)]*\)|<img\b([^>]*)>", re.I)
 BADGE = re.compile(r"badge|shields\.io|/workflows/|travis-ci|codecov|coveralls", re.I)
 BADGE_LINE = re.compile(r"^\s*(?:\[?!\[|<(?:p|div|img|a|picture|br)\b)", re.I)
 
@@ -60,6 +61,7 @@ class Readme:
     comparison: str = ""
     sections: List[Section] = field(default_factory=list)
     images: int = 0
+    screenshots: List[dict] = field(default_factory=list)   # [{"url", "alt"}], badges left out
     has_tests: bool = False
     has_install: bool = False
 
@@ -118,10 +120,32 @@ def _bullet(item: str) -> Bullet:
     return Bullet(lead=lead, text=plain(item))
 
 
+def _screenshots(text: str, limit: int = 3) -> List[dict]:
+    """The README's own pictures, in order: where the file is and its alt text. Badges are left out."""
+    out: List[dict] = []
+    for m in IMAGE_ALT.finditer(text):
+        if m.group(2):
+            url, alt = m.group(2), m.group(1)
+        else:
+            tag = m.group(3) or ""
+            src = re.search(r"\bsrc=[\"']([^\"']+)", tag)
+            if not src:
+                continue
+            a = re.search(r"\balt=[\"']([^\"']*)", tag)
+            url, alt = src.group(1), a.group(1) if a else ""
+        if BADGE.search(url) or url.startswith("data:"):
+            continue
+        out.append({"url": url, "alt": plain(alt)})
+        if len(out) == limit:
+            break
+    return out
+
+
 def parse(text: str) -> Readme:
     r = Readme()
     lines = text.replace("\r\n", "\n").split("\n")
     r.images = sum(1 for m in IMAGE.finditer(text) if not BADGE.search(m.group(1) or m.group(2) or ""))
+    r.screenshots = _screenshots(text)
 
     # Split into sections. Lines before the first heading belong to a nameless one.
     current = Section("", 0)

@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
+from . import media as mediamod
 from . import playbook as pbmod
 from .channels import CHANNELS, Issue, lint
 from .traffic import repo_dir, write_json
@@ -50,8 +51,17 @@ class Draft:
     def channel(self) -> str:
         return self.meta.get("channel", "")
 
+    def media_ids(self) -> List[str]:
+        return [m.strip() for m in self.meta.get("media", "").split(",") if m.strip()]
+
     def digest(self) -> str:
+        """Covers the words and, when media is attached, the hash of each media file. Re-rendering a file
+        changes it, so the approval goes with it."""
         raw = json.dumps(self.fields, sort_keys=True, ensure_ascii=False)
+        ids = self.media_ids()
+        if ids:
+            media_dir = self.path.parent.parent / "media"
+            raw += json.dumps({i: mediamod.hash_of(media_dir, i) for i in sorted(ids)}, sort_keys=True)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
     @property
@@ -119,15 +129,36 @@ class Draft:
         return cls(id=path.stem, path=path, meta=meta, fields=fields)
 
 
+def _probe(path: Path):
+    from .render import probe
+    return probe(path)
+
+
 class Kit:
     def __init__(self, base: Path, repo: str):
         self.repo = repo
         self.dir = repo_dir(base, repo) / "kit"
         self.drafts_dir = self.dir / "drafts"
+        self.media_dir = self.dir / "media"
         self.playbooks = pbmod.Playbooks(base, repo)
 
+    def manifest(self) -> mediamod.Manifest:
+        return mediamod.Manifest(self.dir)
+
     def issues(self, d: "Draft") -> List[Issue]:
-        return d.issues(self.playbooks.approved(), self.playbooks.proposed())
+        out = d.issues(self.playbooks.approved(), self.playbooks.proposed())
+        ids = d.media_ids()
+        if ids:
+            m = self.manifest()
+            for i in ids:
+                a = m.get(i)
+                if not a:
+                    out.append(Issue("error", "media", f"lists {i}, which isn't in media.json. Run `surya-distro create {self.repo}`"))
+                    continue
+                out += [Issue(x.level, "media", x.message and f"{i}: {x.message}") for x in mediamod.issues(a, _probe)]
+                if a.get("status") != "approved":
+                    out.append(Issue("warning", "media", f"{i} isn't approved yet. Approve it: surya-distro approve {self.repo} media:{i}"))
+        return out
 
     def errors(self, d: "Draft") -> List[Issue]:
         return [i for i in self.issues(d) if i.level == "error"]
@@ -182,6 +213,26 @@ class Kit:
         d.meta.pop("post_url", None)
         d.save()
         return d
+
+    def approve_media(self, asset_id: str, confirm: Callable[[dict], bool]) -> dict:
+        """Approve one rendered file. It must pass `check`. Re-rendering it takes the approval away."""
+        m = self.manifest()
+        m.refresh()
+        a = m.get(asset_id)
+        if not a:
+            have = ", ".join(x["id"] for x in m.assets) or "none"
+            raise KitError(f"no media {asset_id!r} for {self.repo}. Media: {have}. Run: surya-distro create {self.repo}")
+        errs = mediamod.approvable(a, _probe)
+        if errs:
+            raise KitError(f"{asset_id} has {len(errs)} problem(s) to fix first:\n" + "\n".join(f"  {e}" for e in errs))
+        if a["status"] == "approved":
+            return a
+        if not confirm(a):
+            raise KitError("Not approved.")
+        a["status"] = "approved"
+        m.put(a)
+        m.save()
+        return a
 
     def posted(self, draft_id: str, url: str = "") -> Draft:
         d = self.draft(draft_id)
@@ -372,6 +423,8 @@ def render_review(kit: Kit) -> str:
         lines.append(f"Status: {_status_line(d, issues)}. Playbook: {d.meta.get('playbook', 'none')}.")
         if d.meta.get("note"):
             lines.append(f"Note: {d.meta['note']}")
+        if d.media_ids():
+            lines.append("Media: " + ", ".join(d.media_ids()) + ". Each file's hash is part of this draft's approval.")
         if ch and ch.submit and d.channel != "email":
             lines.append(f"Post it here: {ch.submit.format(subreddit=d.fields.get('subreddit', ''))}")
         for i in issues:
@@ -384,6 +437,7 @@ def render_review(kit: Kit) -> str:
             lines.append(v)
             lines.append("````")
             lines.append("")
+    lines += _media_review(kit, approved if approved else None)
     lines += ["## Where to submit", ""]
     if t:
         from .targets import Result, render
@@ -392,6 +446,30 @@ def render_review(kit: Kit) -> str:
         lines.append("Not checked yet. Run `surya-distro targets " + kit.repo + "`.")
     lines.append("")
     return "\n".join(lines)
+
+
+def _media_review(kit: Kit, pb: Optional[dict]) -> List[str]:
+    from . import create as createmod
+    m = kit.manifest()
+    m.refresh()
+    lines = ["## Media", ""]
+    if not m.assets:
+        return lines + [f"None made yet. `surya-distro create {kit.repo}` makes the images and videos from the playbook and the study.", ""]
+    try:
+        fm = json.loads((kit.media_dir / "formats.json").read_text(encoding="utf-8")).get("formats", {})
+    except (OSError, ValueError):
+        fm = {}
+    lines += ["Open the files in `kit/media/`. Approve each one yourself: "
+              f"`surya-distro approve {kit.repo} media:<id>`. Re-rendering a file takes its approval away.", ""]
+    for a in m.assets:
+        errs = [i for i in mediamod.issues(a, _probe) if i.level == "error"]
+        size = f"{a['width']}x{a['height']}" + (f", {a['seconds']:g} s" if a.get("seconds") else "")
+        lines.append(f"- **{a['id']}** ({a['channel']} {a['kind']}, {size}): {a['status']}"
+                     + (f", {len(errs)} error(s)" if errs else "") + f". `{a['path']}`")
+        lines.append(f"  - Follows `{a['follows']}`. " + createmod.describe(a["follows"], pb, fm))
+        for i in errs:
+            lines.append(f"  - {i}")
+    return lines + [""]
 
 
 def write_docs(kit: Kit) -> Path:

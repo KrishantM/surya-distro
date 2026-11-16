@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from . import __version__, engines, learn, measure, stages, study, traffic
+from . import __version__, create as createmod, engines, learn, look, measure, media as mediamod, render as rendermod, stages, study, traffic
 from . import playbook as pbmod
 from .channels import first_drafts, follow
 from .github import GitHub, GitHubError, parse_repo
@@ -19,14 +19,16 @@ from .targets import Checker, fitting, render
 
 HELP = """Surya Distro launches an open-source repo. It never posts, submits or sends.
 
-  study → strategy → draft → check → approve → post (by hand) → posted → measure → learn
+  study → strategy → draft → create → check → approve → post (by hand) → posted → measure → learn
 
   study <repo>              read public posts in the repo's space, score each against its author's size and age
   strategy <repo>           turn the study and your results into a playbook, shown as a diff
   draft <repo>              study and strategy first if they're missing or stale, then draft one post per channel
-  check <repo> [draft]      hold drafts to their channel's rules and the approved playbook
+  create <repo>             make the images and videos, in the formats the study and the playbook favour
+  media <repo>              list the images and videos, and where each stands
+  check <repo> [draft]      hold drafts and media to their channel's rules and the approved playbook
   show <repo>               where the repo is in the flow, and a fresh review sheet
-  approve <repo> <draft>    approve a draft, from your own terminal. `approve <repo> playbook` approves a playbook change
+  approve <repo> <draft>    approve a draft, from your own terminal. `playbook` approves a playbook change, `media:<id>` a file
   posted <repo> <draft>     record that you posted it (--url LINK)
   measure [repo] [draft]    read your posts at 1 hour, 24 hours and 7 days, and store GitHub traffic
   report <repo>             your posts beside the traffic that followed
@@ -182,10 +184,34 @@ def cmd_targets(args) -> int:
     return 0
 
 
+def _probe(path):
+    return rendermod.probe(path)
+
+
+def _check_media(kit: Kit, only: Optional[str] = None) -> int:
+    m = kit.manifest()
+    for gone in m.refresh():
+        print(f"media:{gone} changed after it was approved, so it is a draft again.")
+    assets = [a for a in m.assets if only is None or a["id"] == only]
+    if only and not assets:
+        raise KitError(f"no media {only!r} for {kit.repo}. Run: surya-distro media {kit.repo}")
+    errors = 0
+    for a in assets:
+        issues = mediamod.issues(a, _probe)
+        errs = sum(1 for i in issues if i.level == "error")
+        errors += errs
+        print(f"media:{a['id']}: {'ok' if not issues else f'{errs} error(s), {len(issues) - errs} warning(s)'}")
+        for i in issues:
+            print(f"  {i}")
+    return errors
+
+
 def cmd_check(args) -> int:
     kit = Kit(_base(args), parse_repo(args.repo))
+    if args.draft and args.draft.startswith("media:"):
+        return 1 if _check_media(kit, args.draft[6:]) else 0
     drafts = [kit.draft(args.draft)] if args.draft else kit.drafts()
-    if not drafts:
+    if not drafts and not kit.manifest().assets:
         raise KitError(f"no drafts for {kit.repo}. Run: surya-distro draft {kit.repo}")
     errors = 0
     for d in drafts:
@@ -195,6 +221,8 @@ def cmd_check(args) -> int:
         print(f"{d.id}: {'ok' if not issues else f'{errs} error(s), {len(issues) - errs} warning(s)'}")
         for i in issues:
             print(f"  {i}")
+    if not args.draft:
+        errors += _check_media(kit)
     return 1 if errors else 0
 
 
@@ -206,7 +234,12 @@ def cmd_show(args) -> int:
     for d in kit.drafts():
         errs = len(kit.errors(d))
         extra = f"  posted {d.meta['posted_at'][:10]}" if d.state == "posted" else ""
-        print(f"  {d.id:<28} {d.state:<9} {errs} error(s){extra}")
+        media = f"  media: {d.meta['media']}" if d.media_ids() else ""
+        print(f"  {d.id:<28} {d.state:<9} {errs} error(s){extra}{media}")
+    m = kit.manifest()
+    m.refresh()
+    for a in m.assets:
+        print(f"  media:{a['id']:<22} {a['status']:<9} {a['width']}x{a['height']}" + (f", {a['seconds']:g} s" if a.get("seconds") else ""))
     print(f"\nReview sheet: {write_docs(kit)}")
     return 0
 
@@ -236,8 +269,24 @@ def _terminal_confirm_playbook(diff: str) -> bool:
     return answer.strip() == "playbook"
 
 
+def _terminal_confirm_media(a: dict) -> bool:
+    _tty()
+    size = f"{a['width']}x{a['height']}" + (f", {a['seconds']:g} seconds" if a.get("seconds") else "")
+    print(f"{a['id']} ({a['channel']} {a['kind']}, {size})\nOpen it and look at it first: {a['path']}\nSource: {a['html']}\nsha256: {a['sha256']}")
+    try:
+        answer = input(f'Type "{a["id"]}" to approve this file: ')
+    except EOFError:
+        return False
+    return answer.strip() == a["id"]
+
+
 def cmd_approve(args) -> int:
     kit = Kit(_base(args), parse_repo(args.repo))
+    if args.draft.startswith("media:"):
+        a = kit.approve_media(args.draft[6:], _terminal_confirm_media)
+        print(f"Approved media:{a['id']}. A draft that lists it still needs its own approval. Post it by hand.")
+        write_docs(kit)
+        return 0
     if args.draft == "playbook":
         store = _learnings(args)
 
@@ -336,6 +385,61 @@ def cmd_learn(args) -> int:
     return 0
 
 
+def cmd_create(args) -> int:
+    repo = parse_repo(args.repo)
+    kit = Kit(_base(args), repo)
+    facts = kit.facts()
+    only = [x.strip() for x in args.only.split(",") if x.strip()] if args.only else None
+    try:
+        out = createmod.run(kit, facts, _base(args), net=make_net(), only=only, voice=args.voice, style=args.style,
+                                   sets=args.set, screenshot=args.screenshot, preview=args.preview, say=_say)
+    except (createmod.CreateError, look.StyleError, rendermod.RenderUnavailable, rendermod.RenderError) as e:
+        raise KitError(str(e))
+    pb = out["playbook"]
+    print(f"\nMedia for {repo}: {kit.media_dir}")
+    for r in out["results"]:
+        a = r.asset
+        size = f"{a['width']}x{a['height']}" + (f", {a['seconds']:g} s" if a.get("seconds") else "")
+        print(f"  {a['id']:<24} {a['kind']:<6} {size:<18} {a['status']:<9} follows {a['follows']}" + ("" if r.rendered else "  (HTML only)"))
+    for ch, kind, why in out["skipped"]:
+        print(f"  skipped {ch} {kind}: {why}")
+    notes = {r.note for r in out["results"] if r.note}
+    for n in sorted(notes):
+        print(n)
+    for n in out["notes"]:
+        print(n)
+    for a_id in out["reset"]:
+        print(f"{a_id} was approved. Rendering it again took the approval away.")
+    holes = sorted({i for r in out["results"] for i in createmod.fill_markers(r.asset)})
+    if holes:
+        print("\nSome files show a [[fill: ...]] marker, so `check` will refuse them until you supply the words:")
+        for h in holes:
+            print(f"  {h}")
+        print(f"Supply it with: surya-distro create {repo} --set problem=\"...\"")
+    if not out["screenshot"]:
+        print("No screenshot or GIF from the README was used. Add one, or pass --screenshot FILE.")
+    print(f"\nPlaybook: {'v' + str(pb.get('version')) if pb else 'none'}. Formats from the study are in {kit.media_dir / 'formats.json'}.")
+    print(f"Look at the files, then: surya-distro check {repo}   and   surya-distro approve {repo} media:<id>")
+    print(f"Review sheet: {write_docs(kit)}")
+    return 0
+
+
+def cmd_media(args) -> int:
+    kit = Kit(_base(args), parse_repo(args.repo))
+    m = kit.manifest()
+    for gone in m.refresh():
+        print(f"media:{gone} changed after it was approved, so it is a draft again.")
+    if not m.assets:
+        print(f"No media for {kit.repo} yet. Run: surya-distro create {kit.repo}")
+        return 0
+    for a in m.assets:
+        errs = sum(1 for i in mediamod.issues(a, _probe) if i.level == "error")
+        size = f"{a['width']}x{a['height']}" + (f", {a['seconds']:g} s" if a.get("seconds") else "")
+        print(f"  {a['id']:<24} {a['channel']:<12} {a['kind']:<6} {size:<18} {a['status']:<9} {errs} error(s)  follows {a['follows']}")
+        print(f"  {'':<24} {a['path']}")
+    return 0
+
+
 def cmd_outbox(args) -> int:
     kit = Kit(_base(args), parse_repo(args.repo))
     out = kit.outbox()
@@ -381,13 +485,27 @@ def build_parser() -> argparse.ArgumentParser:
     study_opts(d)
     d.set_defaults(fn=cmd_draft)
 
+    cr = sub.add_parser("create", help="make the images and videos")
+    cr.add_argument("repo")
+    cr.add_argument("--only", help="comma-separated asset ids, instead of the ones the evidence picks")
+    cr.add_argument("--voice", action="store_true", help="add a spoken track (macOS `say`, or SURYA_DISTRO_TTS). Off by default")
+    cr.add_argument("--style", help="a JSON file of colours and fonts that override the ones picked from the repo")
+    cr.add_argument("--set", action="append", metavar="KEY=VALUE", help="words only you know: problem, tagline, name or install")
+    cr.add_argument("--screenshot", help="a PNG, JPEG, GIF or WebP to use in place of the README's own")
+    cr.add_argument("--preview", action="store_true", help="follow a playbook change that isn't approved yet")
+    cr.set_defaults(fn=cmd_create)
+
+    md = sub.add_parser("media", help="list the images and videos")
+    md.add_argument("repo")
+    md.set_defaults(fn=cmd_media)
+
     t = sub.add_parser("targets", help="check where to submit, live")
     t.add_argument("repo")
     t.set_defaults(fn=cmd_targets)
 
     c = sub.add_parser("check", help="hold drafts to their rules")
     c.add_argument("repo")
-    c.add_argument("draft", nargs="?")
+    c.add_argument("draft", nargs="?", help="a draft id, or media:<id>")
     c.set_defaults(fn=cmd_check)
 
     s = sub.add_parser("show", help="where the repo is in the flow")
@@ -396,7 +514,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     a = sub.add_parser("approve", help="approve a draft or a playbook change, interactively")
     a.add_argument("repo")
-    a.add_argument("draft", help="a draft id, or `playbook`")
+    a.add_argument("draft", help="a draft id, `playbook`, or media:<id>")
     a.set_defaults(fn=cmd_approve)
 
     po = sub.add_parser("posted", help="record that you posted a draft")
@@ -444,7 +562,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
     try:
         return args.fn(args)
-    except (GitHubError, KitError, engines.EngineError, NetError, pbmod.PlaybookError) as e:
+    except (GitHubError, KitError, engines.EngineError, NetError, pbmod.PlaybookError, createmod.CreateError,
+            look.StyleError, rendermod.RenderUnavailable, rendermod.RenderError) as e:
         print(str(e), file=sys.stderr)
         return 2
 

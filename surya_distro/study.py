@@ -230,6 +230,77 @@ def group_rows(posts: List[dict], dim: str, min_n: int = 3) -> List[dict]:
     return sorted(rows, key=lambda r: -r["effect"])
 
 
+# ---------------------------------------------------------------- media ------
+MEDIA_FORMATS = ("video", "gif", "image", "text-only", "screenshot")
+MEDIA_MIN_SOURCE, MEDIA_MIN_GROUP, MEDIA_MIN_EFFECT = 8, 3, 0.3
+GIF_RE = re.compile(r"\.gif\b|giphy\.com|tenor\.com", re.I)
+# Channel -> the source whose posts show how media does there. X has no free read API, so Bluesky stands in.
+MEDIA_EVIDENCE = {"hn": ["hn"], "reddit": ["reddit"], "bluesky": ["bluesky"], "x": ["x", "bluesky"],
+                  "linkedin": ["linkedin"], "producthunt": ["producthunt"], "readme": ["github"]}
+
+
+def media_format(p: dict) -> str:
+    """One of video, gif, image, text-only, screenshot (a screenshot in the README), or demo-link. A shape, never content."""
+    m = (p.get("tags") or {}).get("media") or p.get("media") or "none"
+    if p["source"] == "github":
+        return {"image": "screenshot", "video": "video"}.get(m, "text-only")
+    if m == "video":
+        return "gif" if GIF_RE.search(f"{p.get('link', '')} {p.get('text', '')}") else "video"
+    return {"image": "image", "demo-link": "demo-link"}.get(m, "text-only")
+
+
+def media_formats(study: Optional[dict]) -> Dict[str, dict]:
+    """For each channel, which media formats beat their baseline, with the sample size and confidence.
+
+    Each format is compared with every other post from the same source, among launch posts when
+    there are enough of them (the same pool the playbook uses). The id is `format.<channel>.<format>`."""
+    out: Dict[str, dict] = {}
+    if not study:
+        return out
+    for channel, srcs in MEDIA_EVIDENCE.items():
+        for src in srcs:
+            posts = relevant(study, src)
+            if len(posts) < MEDIA_MIN_SOURCE:
+                continue
+            launches = [p for p in posts if p["tags"].get("kind") in ("launch", "release") or p.get("show")]
+            pool = launches if len(launches) >= MEDIA_MIN_SOURCE else posts
+            by = {p["source"] + p["id"]: media_format(p) for p in pool}
+            results = []
+            for fmt in sorted(set(by.values())):
+                group = [p["score"] for p in pool if by[p["source"] + p["id"]] == fmt]
+                rest = [p["score"] for p in pool if by[p["source"] + p["id"]] != fmt]
+                if len(group) < MEDIA_MIN_GROUP or not rest:
+                    continue
+                row = stats.compare(group, rest)
+                top = sorted((p for p in pool if by[p["source"] + p["id"]] == fmt), key=lambda p: -p["score"])[:3]
+                row.update(id=f"format.{channel}.{fmt}", format=fmt, confidence=stats.confidence(row["n"], row["t"]),
+                           beats=row["effect"] >= MEDIA_MIN_EFFECT and row["mean"] > 0,
+                           loses=row["effect"] <= -MEDIA_MIN_EFFECT and row["mean"] < 0,
+                           posts=[{"url": p["url"], "score": p["score"]} for p in top])
+                results.append(row)
+            results.sort(key=lambda r: -r["effect"])
+            out[channel] = {"source": src, "among": "launch posts" if pool is launches else "relevant posts",
+                            "posts": len(pool), "study": study.get("at", "")[:10], "results": results}
+            break
+    return out
+
+
+def _media_section(study: dict) -> List[str]:
+    fm = media_formats(study)
+    lines = ["## Media formats", "",
+             "Which kinds of media beat their baseline, per channel. Each format is compared with the other posts from the same source. "
+             "A format needs three or more posts to show. X has no free read API, so its row uses Bluesky when no X posts were pasted in. "
+             "`create` makes the images and videos from these rows and the playbook.", ""]
+    if not fm:
+        return lines + ["Not enough relevant posts from any source (8 needed).", ""]
+    lines += ["| Channel | Evidence from | Format | Posts | Mean score | The rest | Gap | Confidence |", "|---|---|---|---|---|---|---|---|"]
+    for ch, info in fm.items():
+        for r in info["results"]:
+            lines.append(f"| {ch} | {sources.NAMES.get(info['source'], info['source'])} {info['among']} | {r['format']} | {r['n']} | "
+                         f"{r['mean']:+.2f} | {r['mean_rest']:+.2f} | {r['effect']:+.2f} | {r['confidence']} |")
+    return lines + [""]
+
+
 def _num(n: float) -> str:
     return f"{n:,.0f}" if n >= 10 or n == int(n) else f"{n:.1f}"
 
@@ -339,6 +410,7 @@ def render(study: dict) -> str:
         if disc:
             lines += ["", f"Comments per like or point, the discussion signal: median {stats.median(disc):.2f}."]
         lines.append("")
+    lines += _media_section(study)
     lines += ["## Tags", "",
               "- Title: " + ", ".join(f"{k} ({v})" for k, v in TITLE_SHAPES.items() if k != "none") + ".",
               "- Opening: " + ", ".join(f"{k} ({v})" for k, v in HOOK_TEXT.items()) + ".",

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width={{width}}">
+<title>{{name}}</title>
+<style>
+{{{base_css}}}
+main { position: absolute; inset: 0; padding: calc(var(--u) * 7); display: flex; flex-direction: column; gap: calc(var(--u) * 3.5); }
+header { display: flex; align-items: center; gap: calc(var(--u) * 1.6); }
+header .mark { width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); font-size: calc(var(--u) * 3.4); }
+header .brand { font-weight: 700; font-size: calc(var(--u) * 3); }
+header .step { margin-left: auto; font-family: var(--mono); font-size: calc(var(--u) * 2.3); color: var(--muted); }
+.kicker { font-family: var(--mono); color: var(--accent); font-size: calc(var(--u) * 2.4); letter-spacing: .04em; text-transform: uppercase; }
+h1 { font-family: var(--display); font-weight: 750; letter-spacing: -.025em; line-height: 1.1; font-size: calc(var(--u) * 8.5); flex: 1; min-height: 0; overflow: hidden; }
+.rows { display: flex; flex-direction: column; gap: calc(var(--u) * 2.6); flex: 1; min-height: 0; justify-content: center; }
+.row { border-left: calc(var(--u) * .6) solid var(--accent); padding-left: calc(var(--u) * 2.6); }
+.row b { display: block; font-size: calc(var(--u) * 5.4); font-weight: 700; letter-spacing: -.015em; }
+.row span { display: block; margin-top: calc(var(--u) * .8); font-size: calc(var(--u) * 3.3); color: var(--muted); line-height: 1.3; }
+.code { padding: calc(var(--u) * 3) calc(var(--u) * 3.4); font-size: calc(var(--u) * 3.1); }
+.foot { color: var(--muted); font-size: calc(var(--u) * 2.5); font-family: var(--mono); }
+</style></head>
+<body class="gallery">
+<main>
+  <header><span class="mark">{{initial}}</span><span class="brand">{{name}}</span><span class="step">{{step}}</span></header>
+  <div class="kicker">{{kicker}}</div>
+  {{{content_html}}}
+  <div class="foot">{{url_display}}</div>
+</main>
+<script>{{{fit_js}}}</script>
+</body></html>

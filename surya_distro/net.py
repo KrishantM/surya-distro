@@ -44,9 +44,10 @@ class NetError(RuntimeError):
 
 
 class Response:
-    def __init__(self, status: int, url: str, body: str = "", headers: Optional[dict] = None):
+    def __init__(self, status: int, url: str, body: str = "", headers: Optional[dict] = None, raw: Optional[bytes] = None):
         self.status, self.url, self.body = status, url, body
         self.headers = headers or {}
+        self.raw = raw if raw is not None else body.encode("utf-8")
 
     @property
     def ok(self) -> bool:
@@ -71,7 +72,8 @@ Opener = Callable[[urllib.request.Request, float], Response]
 def _open(req: urllib.request.Request, timeout: float) -> Response:
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return Response(r.status, r.geturl(), r.read(5_000_000).decode("utf-8", "replace"), dict(r.headers))
+            data = r.read(5_000_000)
+            return Response(r.status, r.geturl(), data.decode("utf-8", "replace"), dict(r.headers), raw=data)
     except urllib.error.HTTPError as e:
         try:
             body = e.read(20_000).decode("utf-8", "replace")
@@ -127,6 +129,11 @@ class Net:
 
     def send_json(self, url: str, payload, headers: Optional[dict] = None, timeout: float = 120) -> Response:
         return self.send(url, json.dumps(payload).encode("utf-8"), "application/json", headers, timeout)
+
+    def get_bytes(self, url: str, headers: Optional[dict] = None, timeout: float = 30) -> Optional[bytes]:
+        """GET a file, such as a README picture. None unless it came back OK."""
+        r = self.get(url, {"Accept": "image/*,*/*", **(headers or {})}, timeout)
+        return r.raw if r.ok else None
 
     def get_json(self, url: str, headers: Optional[dict] = None, timeout: float = 20):
         r = self.get(url, headers, timeout)

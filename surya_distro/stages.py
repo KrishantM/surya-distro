@@ -1,6 +1,6 @@
 """The flow, every step named, and how much of each is automated.
 
-    study → strategy → draft → check → approve → post → posted → measure → learn
+    study → strategy → draft → create → check → approve → post → posted → measure → learn
 
 `automation` is the honest field:
 
@@ -29,8 +29,9 @@ FLOW = (
     Step("study", "automatic", "reads public posts in the repo's space and scores each against its author's size and age"),
     Step("strategy", "assisted", "turns the study and your results into a playbook, shown as a diff"),
     Step("draft", "assisted", "drafts one post per channel, following the approved playbook"),
-    Step("check", "automatic", "holds each draft to its channel's rules and the playbook"),
-    Step("approve", "manual", "you approve drafts and playbook changes, in your own terminal"),
+    Step("create", "assisted", "makes the images and videos, in the media formats the study and the playbook favour"),
+    Step("check", "automatic", "holds each draft and each media file to its channel's rules and the playbook"),
+    Step("approve", "manual", "you approve drafts, media files and playbook changes, in your own terminal"),
     Step("post", "manual", "you post each draft by hand"),
     Step("posted", "manual", "you record the link"),
     Step("measure", "automatic", "reads each post at 1 hour, 24 hours and 7 days, and stores GitHub traffic"),
@@ -59,6 +60,7 @@ def status(base: Path, repo: str, learn_root: Path) -> List[str]:
                      (f"v{approved['version']} approved {approved.get('approved_at', '')[:10]}" if approved else "no playbook")),
         "draft": f"{len(drafts)} drafts" + (f", {sum(1 for d in drafts if d.meta.get('playbook', '').startswith('proposal'))} from the waiting change"
                                             if proposed else "") if drafts else "none",
+        "create": (lambda a: f"{len(a)} file(s), {sum(1 for x in a if x['status'] == 'approved')} approved" if a else "none")(kit.manifest().assets),
         "check": f"{errs} of {len(drafts)} with errors" if drafts else "",
         "approve": f"{sum(1 for d in drafts if d.state == 'approved')} approved" + (", 1 playbook change waiting" if proposed else ""),
         "post": "by hand",
