@@ -139,6 +139,11 @@ def thread_posts(text: str) -> List[str]:
     return [p.strip() for p in re.split(r"^\s*---\s*$", text, flags=re.M) if p.strip()]
 
 
+def size_of(rule: Rule, text: str) -> int:
+    """How the channel counts this text against the rule's limit."""
+    return weighted_length(text) if rule.weighted else (grapheme_length(text) if rule.graphemes else len(text))
+
+
 def lint(channel_key: str, fields: Dict[str, str]) -> List[Issue]:
     ch = CHANNELS.get(channel_key)
     if ch is None:
@@ -153,7 +158,7 @@ def lint(channel_key: str, fields: Dict[str, str]) -> List[Issue]:
         parts = thread_posts(value) if rule.field == "thread" else [value]
         for i, part in enumerate(parts, 1):
             label = f"{rule.field} {i}" if rule.field == "thread" else rule.field
-            size = weighted_length(part) if rule.weighted else (grapheme_length(part) if rule.graphemes else len(part))
+            size = size_of(rule, part)
             if rule.max and size > rule.max:
                 issues.append(Issue("error", label, f"{size} characters, the limit is {rule.max}"))
         if rule.prefix and not value.startswith(rule.prefix):

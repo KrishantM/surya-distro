@@ -26,6 +26,16 @@ That runs the study and the strategy first if they're missing or stale, then dra
 
 7. **Show them the review sheet.** Run `show <owner/repo>` and give them the path to `kit/review.md`.
 
+## The app
+
+If they would rather see and edit it on a page, say **"open the app"** and run it in the background:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/surya-distro" app
+```
+
+It opens their browser. Every step, the study, the playbook, the drafts with live checks, the media and the results are there. It never approves or posts, and shows the approve command for them to copy into their own terminal. Give them the link it prints if the browser doesn't open.
+
 ## After they post
 
 - They record each post: `posted <owner/repo> <draft> --url LINK`.

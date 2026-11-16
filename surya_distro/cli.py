@@ -34,6 +34,7 @@ HELP = """Surya Distro launches an open-source repo. It never posts, submits or 
   targets <repo>            check the places to submit again, live
   outbox <repo>             approved emails as JSON, for a sender you run yourself
   schedule                  print an hourly job for `measure`, to install yourself
+  app                       open the app: every step in one page, on your machine only (--port, --no-open)
   flow                      the steps, and what is automated
 
 <repo> is owner/name or a GitHub URL. Data lives in ~/.surya-distro, or $SURYA_DISTRO_HOME."""
@@ -348,6 +349,12 @@ def cmd_outbox(args) -> int:
     return 0
 
 
+def cmd_app(args) -> int:
+    from . import app
+    return app.run(_base(args), port=args.port, open_browser=not args.no_open, engine=getattr(args, "engine", None),
+                   memory=getattr(args, "memory", None))
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="surya-distro", description=HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--version", action="version", version=f"surya-distro {__version__}")
@@ -430,6 +437,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sc = sub.add_parser("schedule", help="print an hourly job to install yourself")
     sc.set_defaults(fn=lambda args: print(traffic.schedule_text(_base(args))) or 0)
+
+    ap = sub.add_parser("app", help="open the app: every step in one page, on your machine only")
+    ap.add_argument("--home", default=argparse.SUPPRESS, help="where kits, studies and traffic are kept (default ~/.surya-distro)")
+    ap.add_argument("--port", type=int, default=0, help="a port on 127.0.0.1 (default: any free one)")
+    ap.add_argument("--no-open", action="store_true", help="print the link and don't open a browser")
+    ap.set_defaults(fn=cmd_app)
 
     fl = sub.add_parser("flow", help="the steps, and what is automated")
     fl.set_defaults(fn=lambda args: print(stages.render()) or 0)

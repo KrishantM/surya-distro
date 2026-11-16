@@ -55,7 +55,32 @@ surya-distro draft owner/repo
 | Measure | `measure` | Reads each post at its 1 hour, 24 hour and 7 day marks, and stores GitHub traffic |
 | Learn | `learn owner/repo` | One note per finding, and a playbook change for you to approve |
 
-`show owner/repo` prints where the repo is in the flow. `report owner/repo` puts each post beside the traffic that followed. `schedule` prints an hourly job for `measure`, which you install yourself.
+`app` opens all of this in one page on your machine, see [The app](#the-app). `show owner/repo` prints where the repo is in the flow. `report owner/repo` puts each post beside the traffic that followed. `schedule` prints an hourly job for `measure`, which you install yourself.
+
+## The app
+
+```bash
+surya-distro app
+```
+
+This opens a page in your browser with the whole flow in it. It runs on your machine only. Use `--port` to pick a port, `--no-open` to print the link instead of opening it, and `--home` to point it at another data folder.
+
+![The Drafts view, with a fill marker highlighted and the checks beside it](docs/app-drafts.png)
+
+- **Launches.** Every repo under the home folder, where it is in the flow, and the one next step.
+- **Study.** The outliers, the small or young accounts that won, which formats beat their baseline with their sample size and confidence, the sources read, and the engine that labelled the posts. Each post links to its public page.
+- **Playbook.** The approved rules, each with its receipts. A waiting change is shown as a list of what changes, and as the exact diff.
+- **Drafts.** Edit a draft in place. The checks run as you type, and fill markers are highlighted. Saving a change to an approved draft resets it to draft, and the page says so before you save. A draft you have recorded as posted is read-only.
+- **Media.** The images and videos in `kit/media/media.json`, with what each one follows and its status. Videos play and seek.
+- **Results.** Each post at 1 hour, 24 hours and 7 days, GitHub views, clones and stars over time with your post dates marked, and the findings from `learn`.
+- **Run a step.** Buttons for study, strategy, draft, check, create, targets, measure and learn. Each one runs the real command and shows what it prints as it prints it. One step runs per repo at a time, and you can cancel a step the app started.
+
+What the app will not do:
+
+- **It never approves.** Where a draft or a playbook change needs your yes, it shows the exact command, for example `surya-distro approve owner/repo hn`, with a copy button. No part of the app can approve.
+- **It never posts.** It has no route that sends anything anywhere. You post by hand and record the link with `posted`.
+- **It stays local.** It listens on 127.0.0.1 only. Each launch has its own token, it checks Host and Origin, and the page's content security policy blocks anything a post's text might try to load. It uses no outside scripts or fonts.
+- **It writes inside the home folder only.** Names with `..` or a leading dash are refused.
 
 ## Study
 
@@ -141,8 +166,6 @@ Distro does the work, but the advanced steps compound only when what it learns o
 - **Models.** Surya Unite, part of the paid Surya app, routes the labelling to a local model, Claude or Codex.
 - **Agents.** The Claude Code plugin is the main way in. Codex or any agent with a shell can run the same commands.
 
-A visual dashboard is part of Surya Unite.
-
 ## Where it checks
 
 `draft` and `targets` check these places live, every run.
@@ -183,12 +206,13 @@ Set `SURYA_DISTRO_HOME` or pass `--home` to keep it somewhere else.
 
 | Part | How it was checked |
 |---|---|
-| Study, strategy, drafts, checks, approvals, measure, learn | 117 unit tests. Every network call goes to a fake, and the tests fail if any request reaches the network |
+| Study, strategy, drafts, checks, approvals, measure, learn, the app | 166 unit tests. Every network call goes to a fake, and the tests fail if any request reaches the network |
 | Never posts | A test holds every request with a body to five read or scoring endpoints, and bans publishing endpoints from the code |
 | Live study | A real run for one public repo on 12 November 2026. It read 387 public posts: 202 from Hacker News, 125 from Bluesky and 60 GitHub repos. A local model labelled them through Ollama in about 8 minutes. The playbook was written from it and the repo's drafts were redrafted to follow it |
 | Jev | Built from TypeSafe's published API reference. Not run against the live API, because it needs a paid key |
 | Reddit and Product Hunt | Built from their API docs. Not run live, because both need keys |
-| Install | `tests/run_installed.sh` installs into a fresh virtualenv and runs the tests against it, on Python 3.9 and 3.14 |
+| The app | Tests run a real server and check the token, Host, Origin and policy, path traversal, draft saving, the media manifest, jobs with cancel, and range requests. It was also driven in a real browser: every view, a draft edited with live checks, `check` and `targets` run from the buttons, a video played and seeked, light and dark themes, and a 375 px width |
+| Install | `tests/run_installed.sh` installs into a fresh virtualenv, runs the tests against it and loads the app page from it, on Python 3.9 and 3.14 |
 | Hourly schedule | Printed only. Not installed or run |
 
 ```bash

@@ -25,7 +25,9 @@ class NeverSends(unittest.TestCase):
     def test_no_sending_libraries(self):
         for name, src in self.sources().items():
             for lib in ("smtplib", "http.client", "requests", "httpx", "aiohttp", "webbrowser", "socket"):
-                self.assertNotRegex(src, rf"^\s*(import|from)\s+{re.escape(lib)}\b", f"{name} imports {lib}")
+                if name == "app.py" and lib == "webbrowser":
+                    continue   # the app opens its own 127.0.0.1 page, and test_the_app_only_opens_its_own_page holds it to that
+                self.assertNotRegex(src, rf"(?m)^\s*(import|from)\s+{re.escape(lib)}\b", f"{name} imports {lib}")
 
     def test_only_net_opens_urls(self):
         for name, src in self.sources().items():
@@ -81,6 +83,37 @@ class NeverSends(unittest.TestCase):
         eng = self.sources()["engines.py"]
         self.assertIn('[self.exe, "ask", "chore", "--quiet"]', eng)
         self.assertNotIn("--write", eng)
+
+    def test_the_app_only_opens_its_own_page(self):
+        src = self.sources()["app.py"]
+        self.assertEqual(re.findall(r"webbrowser\.\w+\(([^)]*)\)", src), ["url"])
+        self.assertIn('url = f"http://127.0.0.1:{app.port}/?t={app.token}"', src)
+        for name, other in self.sources().items():
+            if name != "app.py":
+                self.assertNotIn("webbrowser", other, name)
+
+    def test_the_app_has_no_route_that_approves_or_sends(self):
+        from surya_distro import app
+        routes = app.GET_ROUTES + app.POST_ROUTES
+        self.assertEqual(set(app.POST_ROUTES), {"check", "draft/save", "run", "cancel"})
+        for route in routes:
+            for word in ("approve", "posted", "send", "submit", "publish", "outbox"):
+                self.assertNotIn(word, route)
+        self.assertEqual(set(app.RUNNABLE), {"study", "strategy", "draft", "check", "create", "targets", "measure", "learn"})
+        src = self.sources()["app.py"]
+        self.assertEqual({m for m in dir(app.Handler) if m.startswith("do_")}, {"do_GET", "do_POST"})
+        # the only program the app starts is this package, through its own CLI
+        self.assertEqual(src.count("subprocess.Popen("), 1)
+        self.assertNotIn("subprocess.run(", src)
+        self.assertIn('[sys.executable, "-m", "surya_distro", "--home"', src)
+        # it shows the approve command as text and never calls it, and never opens a URL itself
+        for banned in ("cmd_approve", "cmd_posted", "cmd_outbox", "terminal_confirm", ".approve(", ".posted(", ".outbox(", "urlopen", "Net("):
+            self.assertNotIn(banned, src)
+        for page in (app.PAGE.read_text(encoding="utf-8"),):
+            self.assertNotRegex(page, r"fetch\(\s*[\"'`]https?:")
+            self.assertNotIn("XMLHttpRequest", page)
+            self.assertNotIn("sendBeacon", page)
+            self.assertNotIn("WebSocket", page)
 
     def test_user_agent_has_no_email(self):
         self.assertNotIn("@", net.USER_AGENT)
