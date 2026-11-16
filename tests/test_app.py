@@ -12,7 +12,7 @@ import time
 import unittest
 from pathlib import Path
 
-from surya_distro import app, cli
+from surya_distro import stages, app, cli
 from surya_distro.kit import Draft, Kit
 
 HN = {"title": "Show HN: Lantern, a log of what your agent changed", "url": "https://github.com/example/lantern",
@@ -508,7 +508,7 @@ class Views(AppCase):
         l = data["launches"][0]
         self.assertEqual(l["next"]["key"], "study")
         self.assertEqual(l["next"]["how"], "run")
-        self.assertEqual(len(l["steps"]), 9)
+        self.assertEqual(len(l["steps"]), len(stages.FLOW))
         self.assertEqual(l["counts"]["drafts"], 1)
 
     def test_drafts_come_with_live_checks_and_markers(self):

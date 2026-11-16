@@ -378,7 +378,7 @@ class Distro:
         posts = measure.Posts(self.base, kit.repo).data
         notes = [n for n in self.learnings().notes() if n.get("repo") == kit.repo]
         done = {"study": bool(st), "strategy": bool(approved), "draft": bool(drafts),
-                "check": bool(drafts) and not any(kit.errors(d) for d in drafts), "approve": any(d.state in ("approved", "posted") for d in drafts),
+                "check": bool(drafts) and not any(kit.errors(d) for d in drafts), "create": bool(kit.manifest().assets), "approve": any(d.state in ("approved", "posted") for d in drafts),
                 "post": any(d.state == "posted" for d in drafts), "posted": any(d.state == "posted" for d in drafts),
                 "measure": any(r.get("snapshots") for r in posts.values()), "learn": bool(notes)}
         steps = [{"key": s.key, "automation": s.automation, "does": s.does, "text": cells[s.key], "done": done[s.key], "current": s.key == nxt["key"]}
