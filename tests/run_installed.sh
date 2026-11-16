@@ -23,4 +23,19 @@ PY
 "$V/surya-distro" flow | grep -q "Nothing is posted"
 "$V/surya-distro" --home "$T/home" schedule | grep -q "Nothing below has been installed"
 "$V/python" -m surya_distro --help > /dev/null
+"$V/python" - <<'PY'
+# the installed app must serve its own page, which is package data
+import http.client, threading, tempfile, surya_distro
+from surya_distro import app
+assert "site-packages" in app.__file__, app.__file__
+d = app.Distro(tempfile.mkdtemp())
+httpd = app.make_server(d)
+threading.Thread(target=httpd.serve_forever, daemon=True).start()
+c = http.client.HTTPConnection("127.0.0.1", d.port, timeout=10)
+c.request("GET", "/", headers={"Host": f"127.0.0.1:{d.port}"})
+r = c.getresponse(); body = r.read().decode()
+assert r.status == 200 and "Surya Distro" in body and d.nonce in body, r.status
+httpd.shutdown()
+print("installed copy serves the app page")
+PY
 echo "installed copy: all checks passed"

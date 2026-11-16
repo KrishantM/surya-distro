@@ -21,4 +21,4 @@ Repository = "https://github.com/KrishantM/surya-distro"
 packages = ["surya_distro"]
 
 [tool.setuptools.package-data]
-surya_distro = ["data/*.json", "templates/*"]
+surya_distro = ["data/*.json", "templates/*", "app.html"]
