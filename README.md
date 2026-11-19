@@ -250,7 +250,7 @@ Set `SURYA_DISTRO_HOME` or pass `--home` to keep it somewhere else.
 
 | Part | How it was checked |
 |---|---|
-| Study, strategy, drafts, checks, approvals, measure, learn, create, the app | TESTCOUNT unit tests. Every network call goes to a fake, and the tests fail if any request reaches the network |
+| Study, strategy, drafts, checks, approvals, measure, learn, create, the app | 218 unit tests. Every network call goes to a fake, and the tests fail if any request reaches the network |
 | Never posts | A test holds every request with a body to five read or scoring endpoints, and bans publishing endpoints from the code |
 | Live study | A real run for one public repo on 12 November 2026. It read 387 public posts: 202 from Hacker News, 125 from Bluesky and 60 GitHub repos. A local model labelled them through Ollama in about 8 minutes. The playbook was written from it and the repo's drafts were redrafted to follow it |
 | Create | A real run for one public repo on 17 November 2026, from a copy of its study and playbook. It rendered 9 images and 5 videos with Chrome and ffmpeg on a Mac, then I looked at the images and at frames from each video. The videos came out H.264, yuv420p, 28.6 seconds. One video was also made with `say` as the voice and a README-style screenshot scene. The tests use a fake browser that speaks the pipe protocol, and one real render of a PNG and a 2 second video when Chrome and ffmpeg are there |
@@ -258,7 +258,7 @@ Set `SURYA_DISTRO_HOME` or pass `--home` to keep it somewhere else.
 | Jev | Built from TypeSafe's published API reference. Not run against the live API, because it needs a paid key |
 | Reddit and Product Hunt | Built from their API docs. Not run live, because both need keys |
 | The app | Tests run a real server and check the token, Host, Origin and policy, path traversal, draft saving, the media manifest, jobs with cancel, and range requests. It was also driven in a real browser: every view, a draft edited with live checks, `check` and `targets` run from the buttons, a video played and seeked, light and dark themes, and a 375 px width |
-INSTALLROW
+| Install | `tests/run_installed.sh` installs into a fresh virtualenv, runs the tests against it, including the create tests that read the packaged templates, and loads the app page from it, on Python 3.9 and 3.14 |
 | Hourly schedule | Printed only. Not installed or run |
 
 ```bash
